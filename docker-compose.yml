@@ -10,6 +10,10 @@ services:
     depends_on:
       - redis-node1
       - redis-node2
+      - redis-node3
+      - redis-node4
+      - redis-node5
+      - redis-node6
   redis-node1:
     image: redis:7.2
     container_name: "node-1"
@@ -30,20 +34,51 @@ services:
       - ./redis-cluster/node2/data:/data
   redis-node3:
     image: redis:7.2
-    container_name: "node-2"
+    container_name: "node-3"
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     ports:
       - "7002:7002"
     volumes:
       - ./redis-cluster/node3/redis.conf:/usr/local/etc/redis/redis.conf
       - ./redis-cluster/node3/data:/data
+  redis-node4:
+    image: redis:7.2
+    container_name: "node-4"
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    ports:
+      - "7003:7003"
+    volumes:
+      - ./redis-cluster/node4/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./redis-cluster/node4/data:/data
+  redis-node5:
+    image: redis:7.2
+    container_name: "node-5"
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    ports:
+      - "7004:7004"
+    volumes:
+      - ./redis-cluster/node5/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./redis-cluster/node5/data:/data
+  redis-node6:
+    image: redis:7.2
+    container_name: "node-6"
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    ports:
+      - "7005:7005"
+    volumes:
+      - ./redis-cluster/node6/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./redis-cluster/node6/data:/data
   redis-cluster-init:
     image: redis:7.2
     container_name: "cluster-init"
     depends_on:
       - redis-node1
       - redis-node2
+      - redis-node3
+      - redis-node4
+      - redis-node5
+      - redis-node6
     command: >
-      sh -c "sleep 20 && echo yes | redis-cli --cluster create redis-node1:7000 redis-node2:7001 redis-node3:7002 --cluster-replicas 1"
+      sh -c "sleep 20 && echo yes | redis-cli --cluster create redis-node1:7000 redis-node2:7001 redis-node3:7002 redis-node4:7003 redis-node5:7004 redis-node6:7005 --cluster-replicas 1"
     networks:
       - default

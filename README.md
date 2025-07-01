@@ -1,32 +1,15 @@
-# Redis PHP Demo
-
-Demo các tính năng Redis sử dụng PHP, chạy bằng Docker.
-
-## Yêu cầu
-- Docker
-- Docker Compose
-
-## Cách chạy
-
-```bash
-git clone <repo này>
-cd redis-cli-demo
-docker-compose up --build
+# Access container
+```
+docker exec -it node-1 redis-cli -p 7000 cluster nodes
 ```
 
-Truy cập: http://localhost:8080
+# View master - slave
+redis-cluster/node1/data/nodes.conf
 
-## Các tính năng demo
-- Kết nối Redis
-- String, List, Set, Sorted Set, Hash
-- TTL/Expire
-- Transaction
-- Pub/Sub
-- Caching
-- ...
+| Field             | Means                                |
+| ----------------- | ------------------------------------ |
+| `master`          | Node là master                       |
+| `slave <node_id>` | Là replica (slave) của node có ID đó |
+| `0-5460`          | Slot mà master đang giữ              |
+| `connected`       | Trạng thái kết nối hiện tại          |
 
-## Thêm tính năng
-Chỉnh sửa file `src/index.php` để bổ sung các demo khác. 
-
-
-docker exec -it redis-cli-redis-node1-1 redis-cli -p 7000 cluster nodes

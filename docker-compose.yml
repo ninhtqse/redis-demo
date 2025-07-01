@@ -1,0 +1,36 @@
+version: '3.8'
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      - ./src:/var/www/html
+    depends_on:
+      - redis-node1
+      - redis-node2
+  redis-node1:
+    image: redis:7.2
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    ports:
+      - "7000:7000"
+    volumes:
+      - ./redis-cluster/node1/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./redis-cluster/node1/data:/data
+  redis-node2:
+    image: redis:7.2
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    ports:
+      - "7001:7001"
+    volumes:
+      - ./redis-cluster/node2/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./redis-cluster/node2/data:/data
+  redis-cluster-init:
+    image: redis:7.2
+    depends_on:
+      - redis-node1
+      - redis-node2
+    command: >
+      sh -c "sleep 20 && echo yes | redis-cli --cluster create redis-node1:7000 redis-node2:7001 --cluster-replicas 1"
+    networks:
+      - default

@@ -2,6 +2,7 @@ version: '3.8'
 services:
   web:
     build: .
+    container_name: "web"
     ports:
       - "8080:80"
     volumes:
@@ -11,6 +12,7 @@ services:
       - redis-node2
   redis-node1:
     image: redis:7.2
+    container_name: "node-1"
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     ports:
       - "7000:7000"
@@ -19,6 +21,7 @@ services:
       - ./redis-cluster/node1/data:/data
   redis-node2:
     image: redis:7.2
+    container_name: "node-2"
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     ports:
       - "7001:7001"
@@ -27,6 +30,7 @@ services:
       - ./redis-cluster/node2/data:/data
   redis-cluster-init:
     image: redis:7.2
+    container_name: "cluster-init"
     depends_on:
       - redis-node1
       - redis-node2

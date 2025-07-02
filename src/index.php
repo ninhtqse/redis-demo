@@ -11,6 +11,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
     // Thêm -c để redis-cli tự động follow MOVED/ASK
     $fullCmd = 'redis-cli -c -h redis-node1 -p 7000 ' . $escaped . ' 2>&1';
     $output = shell_exec($fullCmd);
+    // Hiển thị (nil) nếu output là NULL, rỗng, hoặc "null"
+    if ($output === null || trim($output) === '' || strtolower(trim($output)) === 'null') {
+        $output = "(nil)";
+    }
     echo json_encode(['result' => $output]);
     exit;
 }
@@ -19,56 +23,112 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>redis-cli Web</title>
+    <title>Redis CLI</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="images/icon.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background: #181c20; color: #eee; }
+        body {
+            background: #181c20;
+            color: #eee;
+            font-family: 'Space Grotesk',ui-sans-serif,system-ui,sans-serif,apple color emoji,segoe ui emoji,segoe ui symbol,noto color emoji;
+            font-size: 1.08rem;
+        }
         .terminal {
             background: #181c20;
             color: #eee;
-            font-family: 'Fira Mono', 'Consolas', monospace;
-            padding: 1rem;
-            border-radius: 8px;
+            font-family: 'Space Grotesk',ui-sans-serif,system-ui,sans-serif,apple color emoji,segoe ui emoji,segoe ui symbol,noto color emoji;
+            padding: 1.5rem 1rem 1rem 1rem;
+            border-radius: 12px;
             min-height: 400px;
             max-height: 70vh;
             overflow-y: auto;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 24px 0 #0008;
+            border: 1.5px solid #23272e;
+            font-size: 1.04rem;
         }
-        .prompt { color: #00ff00; }
-        .cmd { color: #fff; }
-        .result { color: #ffd700; white-space: pre-wrap; }
-        .error { color: #ff5555; white-space: pre-wrap; }
+        .prompt {
+            color: #00ff00;
+            font-weight: bold;
+            width: 9%;
+            font-size: 1.08rem;
+        }
+        .cmd {
+            color: #fff;
+            font-weight: 500;
+        }
+        .result {
+            color: #7fffd4;
+            white-space: pre-wrap;
+            margin-left: 0.5em;
+        }
+        .result.ok, .result.pong, .result.number {
+            color: #00ff00;
+        }
+        .result.null {
+            color: #888;
+        }
+        .error {
+            color: #ff5555;
+            white-space: pre-wrap;
+            margin-left: 1.5em;
+        }
         .input-line {
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            background: #23272e;
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            box-shadow: 0 2px 8px #0004;
         }
         #cli-input {
-            background: #181c20;
+            background: transparent;
             color: #fff;
             border: none;
             outline: none;
-            font-family: 'Fira Mono', 'Consolas', monospace;
-            font-size: 1rem;
+            font-family: 'Space Grotesk',ui-sans-serif,system-ui,sans-serif,apple color emoji,segoe ui emoji,segoe ui symbol,noto color emoji;
+            font-size: 1.08rem;
             width: 100%;
+            padding: 0.4rem 0;
+            padding-left: 1rem;
+        }
+        #cli-input:focus {
+            background: #181c20;
         }
         .btn-clear {
             float: right;
             margin-bottom: 1rem;
         }
+        .usage {
+            font-size: 0.98rem;
+            color: #aaa;
+            margin-bottom: 1rem;
+        }
+        @media (max-width: 600px) {
+            .terminal { font-size: 0.93rem; padding: 1rem 0.5rem; }
+            .input-line { padding: 0.5rem 0.5rem; }
+            #cli-input { font-size: 0.98rem; }
+            .prompt { font-size: 0.98rem; }
+        }
     </style>
 </head>
 <body class="container py-5">
-    <h1 class="mb-4">redis-cli Web</h1>
+    <h1 class="mb-4" style="font-weight:700;letter-spacing:1px;">redis-cli</h1>
+    <div class="usage">
+        Type Redis commands like <b>redis-cli</b> (e.g. <code>SET foo bar</code>, <code>GET foo</code>, <code>KEYS *</code>, ...).<br>
+        <b>Arrow ↑/↓</b> to navigate history, <b>Ctrl+L</b> to clear terminal.
+    </div>
     <div class="terminal" id="terminal"></div>
     <form id="cli-form" autocomplete="off" onsubmit="return false;">
         <div class="input-line">
             <span class="prompt">redis-cli&gt;</span>
-            <input type="text" id="cli-input" autofocus autocomplete="off" spellcheck="false" placeholder="Nhập lệnh redis-cli, ví dụ: KEYS *">
+            <input type="text" id="cli-input" autofocus autocomplete="off" spellcheck="false" placeholder="Type redis-cli command, e.g. KEYS *">
         </div>
     </form>
-    <button class="btn btn-sm btn-danger btn-clear" onclick="clearTerminal()">Xóa terminal</button>
+    <button class="btn btn-sm btn-danger btn-clear mt-1" onclick="clearTerminal()">Clear</button>
     <script>
         const terminal = document.getElementById('terminal');
         const cliInput = document.getElementById('cli-input');
@@ -81,7 +141,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
             terminal.appendChild(cmdLine);
             if (result !== undefined && result !== null && result !== '') {
                 const resLine = document.createElement('div');
-                resLine.className = isError ? 'error' : 'result';
+                if (isError) {
+                    resLine.className = 'error';
+                } else {
+                    resLine.className = 'result';
+                    // Highlight OK, PONG, number, NULL, (nil)
+                    if (/^ok$/i.test(result.trim())) resLine.classList.add('ok');
+                    if (/^pong$/i.test(result.trim())) resLine.classList.add('pong');
+                    if (/^-?\d+(\.\d+)?$/.test(result.trim())) resLine.classList.add('number');
+                    if (/^null$/i.test(result.trim()) || /^\(nil\)$/i.test(result.trim())) resLine.classList.add('null');
+                }
                 resLine.innerHTML = escapeHtml(result);
                 terminal.appendChild(resLine);
             }
@@ -113,6 +182,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
                     historyIndex++;
                     cliInput.value = '';
                 }
+            } else if (e.ctrlKey && e.key.toLowerCase() === 'l') {
+                clearTerminal();
+                e.preventDefault();
             }
         });
 

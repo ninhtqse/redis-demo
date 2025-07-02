@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
         .prompt {
             color: #00ff00;
             font-weight: bold;
-            width: 9%;
+            width: 6.5%;
             font-size: 1.08rem;
         }
         .cmd {

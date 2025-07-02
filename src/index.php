@@ -135,6 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
         Type Redis commands like <b>redis-cli</b> (e.g. <code>SET foo bar</code>, <code>GET foo</code>, <code>KEYS *</code>, ...).<br>
         <b>Arrow ↑/↓</b> to navigate history, <b>Ctrl+L</b> to clear terminal.
     </div>
+    <a href="docs.php" style="margin-bottom:2rem;display:inline-block; color:#7fffd4; text-decoration:underline; font-size:1.01rem;">&rarr; Command Docs</a>
     <div class="terminal" id="terminal"></div>
     <form id="cli-form" autocomplete="off" onsubmit="return false;">
         <div class="input-line">
@@ -233,4 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
         }
     </script>
 </body>
+<footer style="position:fixed;left:0;right:0;bottom:0;z-index:1000;">
+    <div style="text-align:center;color:#888;font-size:0.92rem;padding:0.4rem 0 0.2rem 0;user-select:none;">&copy; <?php echo date('Y'); ?> ninhtqse. All rights reserved.</div>
+</footer>
 </html>

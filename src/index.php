@@ -60,12 +60,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
             padding: 1.5rem 1rem 1rem 1rem;
             border-radius: 12px;
             min-height: 400px;
-            max-height: 70vh;
+            max-height: 55vh;
             overflow-y: auto;
             margin-bottom: 1.5rem;
             box-shadow: 0 4px 24px 0 #0008;
             border: 1.5px solid #23272e;
             font-size: 1.04rem;
+        }
+        /* Custom scrollbar for terminal */
+        .terminal::-webkit-scrollbar {
+            width: 10px;
+            background: #181c20;
+        }
+        .terminal::-webkit-scrollbar-thumb {
+            background: #23272e;
+            border-radius: 8px;
+        }
+        .terminal::-webkit-scrollbar-track {
+            background: #181c20;
+        }
+        .terminal {
+            scrollbar-color: #23272e #181c20;
+            scrollbar-width: thin;
         }
         .prompt {
             color: #00ff00;
@@ -142,17 +158,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
     <a href="docs.php" style="margin-bottom:2rem;display:inline-block; color:#7fffd4; text-decoration:underline; font-size:1.01rem;">&rarr; Command Docs</a>
     <div class="terminal" id="terminal"></div>
     <form id="cli-form" autocomplete="off" onsubmit="return false;">
-        <div class="input-line">
+        <div class="input-line" style="position:relative;">
             <span class="prompt">redis-cli&gt;</span>
             <input type="text" id="cli-input" autofocus autocomplete="off" spellcheck="false" placeholder="Type redis-cli command, e.g. KEYS *">
+            <ul id="cli-suggest" style="position:absolute;left:110px;top:100%;z-index:10;background:#23272e;color:#fff;border-radius:6px;box-shadow:0 2px 8px #0004;margin:0;padding:0;list-style:none;min-width:180px;max-height:220px;overflow-y:auto;display:none;font-size:1.01rem;border:1px solid #23272e;"></ul>
         </div>
     </form>
     <button class="btn btn-sm btn-danger btn-clear mt-1" onclick="clearTerminal()">Clear</button>
     <script>
         const terminal = document.getElementById('terminal');
         const cliInput = document.getElementById('cli-input');
+        const cliSuggest = document.getElementById('cli-suggest');
         let history = [];
         let historyIndex = 0;
+        let suggestList = [
+            // Core
+            'GET','SET','DEL','EXISTS','KEYS','INCR','DECR','EXPIRE','TTL','FLUSHDB','FLUSHALL','HSET','HGET','HDEL','HGETALL','LPUSH','RPUSH','LRANGE','SADD','SMEMBERS','ZADD','ZRANGE','ZREM','ZCARD','PING','ECHO','AUTH','SELECT','MOVE','RENAME','TYPE','SCAN','DBSIZE','INFO','CONFIG','CLIENT','MONITOR','SUBSCRIBE','UNSUBSCRIBE','PUBLISH','PSUBSCRIBE','PUBSUB',
+            // RedisJSON
+            'JSON.GET','JSON.SET','JSON.DEL','JSON.ARRAPPEND','JSON.OBJKEYS','JSON.NUMINCRBY','JSON.MGET','JSON.STRAPPEND','JSON.STRLEN','JSON.TYPE','JSON.ARRLEN','JSON.ARRPOP','JSON.ARRTRIM','JSON.CLEAR','JSON.DEBUG','JSON.FORGET','JSON.RESP','JSON.TOGGLE',
+            // RediSearch
+            'FT.CREATE','FT.SEARCH','FT.AGGREGATE','FT.DROPINDEX','FT.INFO','FT.ALTER','FT.ADD','FT.SUGADD','FT.SUGGET','FT.SUGDEL','FT.SUGLEN','FT.EXPLAIN','FT.TAGVALS','FT.SYNUPDATE','FT.SYNDUMP','FT.DICTADD','FT.DICTDEL','FT.DICTDUMP','FT.SPELLCHECK','FT.DEL','FT.GET','FT.BULK','FT.SYNADD','FT.SYNUPDATE','FT.SYNDUMP','FT.SPELLCHECK','FT.EXPLAINCLI','FT.PROFILE','FT.SEARCH','FT.AGGREGATE','FT.DROPINDEX','FT.INFO'
+        ];
+        let suggestFiltered = [];
+        let suggestIndex = -1;
 
         function appendLine(cmd, result, isError = false) {
             const cmdLine = document.createElement('div');
@@ -183,30 +211,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
         }
 
         document.getElementById('cli-form').addEventListener('submit', sendCmd);
+        cliInput.addEventListener('input', function(e) {
+            showSuggest(this.value);
+        });
         cliInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                sendCmd();
-            } else if (e.key === 'ArrowUp') {
-                if (history.length > 0 && historyIndex > 0) {
-                    historyIndex--;
-                    cliInput.value = history[historyIndex];
-                    setTimeout(() => cliInput.setSelectionRange(cliInput.value.length, cliInput.value.length), 0);
+            if (cliSuggest.style.display === 'block') {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    suggestIndex = (suggestIndex + 1) % suggestFiltered.length;
+                    updateSuggestActive();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    suggestIndex = (suggestIndex - 1 + suggestFiltered.length) % suggestFiltered.length;
+                    updateSuggestActive();
+                } else if (e.key === 'Enter') {
+                    if (suggestIndex >= 0 && suggestFiltered[suggestIndex]) {
+                        cliInput.value = suggestFiltered[suggestIndex] + ' ';
+                        hideSuggest();
+                        e.preventDefault();
+                        return;
+                    }
+                } else if (e.key === 'Escape') {
+                    hideSuggest();
                 }
-            } else if (e.key === 'ArrowDown') {
-                if (history.length > 0 && historyIndex < history.length - 1) {
-                    historyIndex++;
-                    cliInput.value = history[historyIndex];
-                    setTimeout(() => cliInput.setSelectionRange(cliInput.value.length, cliInput.value.length), 0);
-                } else if (historyIndex === history.length - 1) {
-                    historyIndex++;
-                    cliInput.value = '';
-                }
-            } else if (e.ctrlKey && e.key.toLowerCase() === 'l') {
-                clearTerminal();
-                e.preventDefault();
             }
         });
-
+        cliInput.addEventListener('blur', function() {
+            setTimeout(hideSuggest, 150);
+        });
+        cliSuggest.addEventListener('mousedown', function(e) {
+            if (e.target.tagName === 'LI') {
+                cliInput.value = e.target.textContent + ' ';
+                hideSuggest();
+                cliInput.focus();
+            }
+        });
+        function showSuggest(val) {
+            const v = val.trim().toUpperCase();
+            if (!v) { hideSuggest(); return; }
+            suggestFiltered = suggestList.filter(cmd => cmd.startsWith(v) || cmd.includes(v)).slice(0, 15);
+            if (suggestFiltered.length === 0) { hideSuggest(); return; }
+            cliSuggest.innerHTML = suggestFiltered.map((cmd, i) => `<li style="padding:0.3em 1em;cursor:pointer;${i===suggestIndex?'background:#444;':''}">${cmd}</li>`).join('');
+            cliSuggest.style.display = 'block';
+            suggestIndex = -1;
+        }
+        function hideSuggest() {
+            cliSuggest.style.display = 'none';
+            suggestFiltered = [];
+            suggestIndex = -1;
+        }
+        function updateSuggestActive() {
+            Array.from(cliSuggest.children).forEach((li, i) => {
+                li.style.background = (i === suggestIndex) ? '#444' : '';
+            });
+        }
         function sendCmd() {
             const cmd = cliInput.value.trim();
             if (!cmd) return;

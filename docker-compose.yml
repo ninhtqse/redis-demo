@@ -18,7 +18,7 @@ services:
     networks:
       - default
   redis-node1:
-    image: redis:7.2
+    image: redis/redis-stack:latest
     container_name: "node-1"
     restart: unless-stopped
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
@@ -31,7 +31,7 @@ services:
     networks:
       - default
   redis-node2:
-    image: redis:7.2
+    image: redis/redis-stack:latest
     container_name: "node-2"
     restart: unless-stopped
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
@@ -44,7 +44,7 @@ services:
     networks:
       - default
   redis-node3:
-    image: redis:7.2
+    image: redis/redis-stack:latest
     container_name: "node-3"
     restart: unless-stopped
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
@@ -57,7 +57,7 @@ services:
     networks:
       - default
   redis-node4:
-    image: redis:7.2
+    image: redis/redis-stack:latest
     container_name: "node-4"
     restart: unless-stopped
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
@@ -70,7 +70,7 @@ services:
     networks:
       - default
   redis-node5:
-    image: redis:7.2
+    image: redis/redis-stack:latest
     container_name: "node-5"
     restart: unless-stopped
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
@@ -83,7 +83,7 @@ services:
     networks:
       - default
   redis-node6:
-    image: redis:7.2
+    image: redis/redis-stack:latest
     container_name: "node-6"
     restart: unless-stopped
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]

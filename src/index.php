@@ -6,17 +6,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
         echo json_encode(['result' => '']);
         exit;
     }
-    // Escape đầu vào để tránh injection
-    $escaped = escapeshellcmd($cmd);
-    // Thêm -c để redis-cli tự động follow MOVED/ASK
-    $fullCmd = 'redis-cli -c -h redis-node1 -p 7000 ' . $escaped . ' 2>&1';
-    $output = shell_exec($fullCmd);
-    // Hiển thị (nil) nếu output là NULL, rỗng, hoặc "null"
-    if ($output === null || trim($output) === '' || strtolower(trim($output)) === 'null') {
-        $output = "(nil)";
+    // Pass command via stdin to keep JSON and special characters
+    $fullCmd = 'redis-cli -c -h redis-node1 -p 7000 --raw 2>&1';
+    $descriptorspec = [
+        0 => ["pipe", "r"], // stdin
+        1 => ["pipe", "w"], // stdout
+        2 => ["pipe", "w"]  // stderr
+    ];
+    $process = proc_open($fullCmd, $descriptorspec, $pipes);
+    if (is_resource($process)) {
+        fwrite($pipes[0], $cmd . "\n");
+        fclose($pipes[0]);
+        $output = stream_get_contents($pipes[1]);
+        fclose($pipes[1]);
+        $error = stream_get_contents($pipes[2]);
+        fclose($pipes[2]);
+        proc_close($process);
+        $result = trim($output . $error);
+        if ($result === '' || strtolower($result) === 'null') {
+            $result = "(nil)";
+        }
+        echo json_encode(['result' => $result]);
+        exit;
     }
-    echo json_encode(['result' => $output]);
-    exit;
 }
 ?>
 <!DOCTYPE html>

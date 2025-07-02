@@ -21,7 +21,7 @@
             top: 0;
             background: #181c20;
             z-index: 2;
-            padding: 0.5rem 0 0.5rem 0.2rem;
+            padding: 0.5rem 0 0.5rem 1rem;
             font-size: 1.2rem;
             color: #7fffd4;
             font-weight: 700;
@@ -79,7 +79,7 @@
     </style>
 </head>
 <body class="container py-5">
-    <h1 class="mb-4" style="font-weight:700;letter-spacing:1px;">Redis Command Docs</h1>
+    <h1 class="mb-4" style="font-weight:700;letter-spacing:1px;">redis-command-docs</h1>
 
     <a href="index.php" class="back-link" style="margin-bottom:2rem;display:inline-block; color:#7fffd4; text-decoration:underline; font-size:1.01rem;">&larr; Back to Redis CLI</a>
 
@@ -98,7 +98,6 @@
         <div class="command-card"><div class="command-name">LPUSH / RPUSH / LRANGE</div><div class="command-desc">Work with lists.</div><div class="command-example">LPUSH key value [value ...]<br>RPUSH key value [value ...]<br>LRANGE key start stop</div></div>
         <div class="command-card"><div class="command-name">SADD / SMEMBERS</div><div class="command-desc">Work with sets.</div><div class="command-example">SADD key member [member ...]<br>SMEMBERS key</div></div>
         <div class="command-card"><div class="command-name">ZADD / ZRANGE</div><div class="command-desc">Work with sorted sets.</div><div class="command-example">ZADD key score member [score member ...]<br>ZRANGE key start stop [WITHSCORES]</div></div>
-        <div class="command-card"><div class="command-name">More...</div><div class="command-desc">See the <a class="command-link" href="https://redis.io/commands/" target="_blank">official Redis command reference</a>.</div></div>
     </div>
 
     <div class="group-title">RedisJSON</div>
@@ -109,7 +108,6 @@
         <div class="command-card"><div class="command-name">JSON.ARRAPPEND</div><div class="command-desc">Append values to a JSON array.</div><div class="command-example">JSON.ARRAPPEND doc .foo 4 5</div></div>
         <div class="command-card"><div class="command-name">JSON.OBJKEYS</div><div class="command-desc">Get the keys in a JSON object.</div><div class="command-example">JSON.OBJKEYS user:1 .</div></div>
         <div class="command-card"><div class="command-name">JSON.NUMINCRBY</div><div class="command-desc">Increment a numeric value in a JSON document.</div><div class="command-example">JSON.NUMINCRBY user:1 .age 1</div></div>
-        <div class="command-card"><div class="command-name">More...</div><div class="command-desc">See the <a class="command-link" href="https://redis.io/commands/?group=json" target="_blank">RedisJSON command reference</a>.</div></div>
     </div>
 
     <div class="group-title">RediSearch</div>
@@ -119,7 +117,6 @@
         <div class="command-card"><div class="command-name">FT.AGGREGATE</div><div class="command-desc">Run aggregation queries.</div><div class="command-example">FT.AGGREGATE myIdx "hello" GROUPBY 1 @title REDUCE COUNT 0 AS count</div></div>
         <div class="command-card"><div class="command-name">FT.DROPINDEX</div><div class="command-desc">Drop an index.</div><div class="command-example">FT.DROPINDEX myIdx DD</div></div>
         <div class="command-card"><div class="command-name">FT.INFO</div><div class="command-desc">Get information about an index.</div><div class="command-example">FT.INFO myIdx</div></div>
-        <div class="command-card"><div class="command-name">More...</div><div class="command-desc">See the <a class="command-link" href="https://redis.io/commands/?group=search" target="_blank">RediSearch command reference</a>.</div></div>
     </div>
 </body>
 </html> 

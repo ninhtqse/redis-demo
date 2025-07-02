@@ -3,6 +3,7 @@ services:
   web:
     build: .
     container_name: "web"
+    restart: unless-stopped
     ports:
       - "8080:80"
     volumes:
@@ -17,6 +18,7 @@ services:
   redis-node1:
     image: redis:7.2
     container_name: "node-1"
+    restart: unless-stopped
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     ports:
       - "7000:7000"
@@ -26,6 +28,7 @@ services:
   redis-node2:
     image: redis:7.2
     container_name: "node-2"
+    restart: unless-stopped
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     ports:
       - "7001:7001"
@@ -35,6 +38,7 @@ services:
   redis-node3:
     image: redis:7.2
     container_name: "node-3"
+    restart: unless-stopped
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     ports:
       - "7002:7002"
@@ -44,6 +48,7 @@ services:
   redis-node4:
     image: redis:7.2
     container_name: "node-4"
+    restart: unless-stopped
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     ports:
       - "7003:7003"
@@ -53,6 +58,7 @@ services:
   redis-node5:
     image: redis:7.2
     container_name: "node-5"
+    restart: unless-stopped
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     ports:
       - "7004:7004"
@@ -62,6 +68,7 @@ services:
   redis-node6:
     image: redis:7.2
     container_name: "node-6"
+    restart: unless-stopped
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     ports:
       - "7005:7005"
@@ -78,7 +85,8 @@ services:
       - redis-node4
       - redis-node5
       - redis-node6
-    command: >
-      sh -c "sleep 20 && echo yes | redis-cli --cluster create redis-node1:7000 redis-node2:7001 redis-node3:7002 redis-node4:7003 redis-node5:7004 redis-node6:7005 --cluster-replicas 1"
+    volumes:
+      - ./init-cluster.sh:/init-cluster.sh
+    command: sh /init-cluster.sh
     networks:
       - default

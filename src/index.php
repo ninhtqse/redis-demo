@@ -160,7 +160,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
     <form id="cli-form" autocomplete="off" onsubmit="return false;">
         <div class="input-line" style="position:relative;">
             <span class="prompt">redis-cli&gt;</span>
-            <input type="text" id="cli-input" autofocus autocomplete="off" spellcheck="false" placeholder="Type redis-cli command, e.g. KEYS *">
+            <div style="position:relative;flex:1;min-width:0;">
+                <span id="cli-ghost" style="position:absolute;left:0;top:0;width:100%;height:100%;color:#aaa;opacity:0.5;pointer-events:none;white-space:pre;overflow:hidden;font-size:1.08rem;font-family:'Space Grotesk',ui-sans-serif,system-ui,sans-serif,apple color emoji,segoe ui emoji,segoe ui symbol,noto color emoji;line-height:1.5;letter-spacing:0.5px;padding:0.4rem 0 0.4rem 1rem;z-index:1;"></span>
+                <input type="text" id="cli-input" autofocus autocomplete="off" spellcheck="false" placeholder="Type redis-cli command, e.g. KEYS *" style="background:transparent;color:#fff;position:relative;z-index:2;width:100%;border:none;outline:none;font-size:1.08rem;font-family:'Space Grotesk',ui-sans-serif,system-ui,sans-serif,apple color emoji,segoe ui emoji,segoe ui symbol,noto color emoji;line-height:1.5;letter-spacing:0.5px;padding:0.4rem 0 0.4rem 1rem;">
+            </div>
             <ul id="cli-suggest" style="position:absolute;left:110px;top:100%;z-index:10;background:#23272e;color:#fff;border-radius:6px;box-shadow:0 2px 8px #0004;margin:0;padding:0;list-style:none;min-width:180px;max-height:220px;overflow-y:auto;display:none;font-size:1.01rem;border:1px solid #23272e;"></ul>
         </div>
     </form>
@@ -181,6 +184,102 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
         ];
         let suggestFiltered = [];
         let suggestIndex = -1;
+
+        // Usage mapping for inline suggestion
+        const usageMap = {
+            'GET': 'key',
+            'SET': 'key value',
+            'DEL': 'key [key ...]',
+            'EXISTS': 'key',
+            'KEYS': 'pattern',
+            'INCR': 'key',
+            'DECR': 'key',
+            'EXPIRE': 'key seconds',
+            'TTL': 'key',
+            'FLUSHDB': '',
+            'FLUSHALL': '',
+            'HSET': 'key field value',
+            'HGET': 'key field',
+            'HDEL': 'key field [field ...]',
+            'HGETALL': 'key',
+            'LPUSH': 'key value [value ...]',
+            'RPUSH': 'key value [value ...]',
+            'LRANGE': 'key start stop',
+            'SADD': 'key member [member ...]',
+            'SMEMBERS': 'key',
+            'ZADD': 'key score member [score member ...]',
+            'ZRANGE': 'key start stop [WITHSCORES]',
+            'ZREM': 'key member [member ...]',
+            'ZCARD': 'key',
+            'PING': '',
+            'ECHO': 'message',
+            'AUTH': 'password',
+            'SELECT': 'index',
+            'MOVE': 'key db',
+            'RENAME': 'key newkey',
+            'TYPE': 'key',
+            'SCAN': 'cursor [MATCH pattern] [COUNT count]',
+            'DBSIZE': '',
+            'INFO': '[section]',
+            'CONFIG': 'subcommand [args]',
+            'CLIENT': 'subcommand [args]',
+            'MONITOR': '',
+            'SUBSCRIBE': 'channel [channel ...]',
+            'UNSUBSCRIBE': '[channel [channel ...]]',
+            'PUBLISH': 'channel message',
+            'PSUBSCRIBE': 'pattern [pattern ...]',
+            'PUBSUB': 'subcommand [argument [argument ...]]',
+            // RedisJSON
+            'JSON.GET': 'key [path]',
+            'JSON.SET': 'key path value',
+            'JSON.DEL': 'key [path]',
+            'JSON.ARRAPPEND': 'key path value [value ...]',
+            'JSON.OBJKEYS': 'key [path]',
+            'JSON.NUMINCRBY': 'key path number',
+            'JSON.MGET': 'key [key ...] path',
+            'JSON.STRAPPEND': 'key path value',
+            'JSON.STRLEN': 'key [path]',
+            'JSON.TYPE': 'key [path]',
+            'JSON.ARRLEN': 'key [path]',
+            'JSON.ARRPOP': 'key path [index]',
+            'JSON.ARRTRIM': 'key path start stop',
+            'JSON.CLEAR': 'key [path]',
+            'JSON.DEBUG': 'subcommand key [path]',
+            'JSON.FORGET': 'key [path]',
+            'JSON.RESP': 'key [path]',
+            'JSON.TOGGLE': 'key path',
+            // RediSearch
+            'FT.CREATE': 'index [ON HASH|JSON] ...',
+            'FT.SEARCH': 'index query [options]',
+            'FT.AGGREGATE': 'index query [options]',
+            'FT.DROPINDEX': 'index [DD]',
+            'FT.INFO': 'index',
+            'FT.ALTER': 'index SCHEMA ...',
+            'FT.ADD': 'index doc_id score [fields]',
+            'FT.SUGADD': 'key string score [INCR] [PAYLOAD payload]',
+            'FT.SUGGET': 'key prefix [FUZZY] [MAX num]',
+            'FT.SUGDEL': 'key string',
+            'FT.SUGLEN': 'key',
+            'FT.EXPLAIN': 'index query',
+            'FT.TAGVALS': 'index field',
+            'FT.SYNUPDATE': 'index group_id term [term ...]',
+            'FT.SYNDUMP': 'index',
+            'FT.DICTADD': 'dict term [term ...]',
+            'FT.DICTDEL': 'dict term [term ...]',
+            'FT.DICTDUMP': 'dict',
+            'FT.SPELLCHECK': 'index query [options]',
+            'FT.DEL': 'index doc_id',
+            'FT.GET': 'index doc_id',
+            'FT.BULK': 'index ...',
+            'FT.SYNADD': 'index group_id term [term ...]',
+            'FT.SYNUPDATE': 'index group_id term [term ...]',
+            'FT.SYNDUMP': 'index',
+            'FT.SPELLCHECK': 'index query [options]',
+            'FT.EXPLAINCLI': 'index query',
+            'FT.PROFILE': 'index query [options]'
+        };
+        const cliUsage = document.getElementById('cli-usage');
+        const cliGhost = document.getElementById('cli-ghost');
 
         function appendLine(cmd, result, isError = false) {
             const cmdLine = document.createElement('div');
@@ -213,6 +312,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
         document.getElementById('cli-form').addEventListener('submit', sendCmd);
         cliInput.addEventListener('input', function(e) {
             showSuggest(this.value);
+            showUsageGhost(this.value);
         });
         cliInput.addEventListener('keydown', function(e) {
             if (cliSuggest.style.display === 'block') {
@@ -235,6 +335,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
                     hideSuggest();
                 }
             }
+            setTimeout(() => showUsageGhost(cliInput.value), 0);
         });
         cliInput.addEventListener('blur', function() {
             setTimeout(hideSuggest, 150);
@@ -264,6 +365,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
             Array.from(cliSuggest.children).forEach((li, i) => {
                 li.style.background = (i === suggestIndex) ? '#444' : '';
             });
+        }
+        function showUsageGhost(val) {
+            const v = val.trim().toUpperCase();
+            let usage = '';
+            if (v && usageMap[v]) {
+                usage = usageMap[v];
+            } else {
+                const firstWord = v.split(' ')[0];
+                if (usageMap[firstWord] && (v === firstWord || v === firstWord + '')) {
+                    usage = usageMap[firstWord];
+                }
+            }
+            // Chỉ hiện usage nếu user chưa nhập tham số (chỉ có lệnh hoặc lệnh + dấu cách)
+            let show = usage && (val.trim().split(/\s+/).length <= 1 || /\s$/.test(val));
+            if (show) {
+                // Hiện usage ngay sau text user đã nhập
+                let prefix = val;
+                if (!/\s$/.test(val)) prefix += ' ';
+                cliGhost.textContent = prefix + usage;
+            } else {
+                cliGhost.textContent = '';
+            }
         }
         function sendCmd() {
             const cmd = cliInput.value.trim();

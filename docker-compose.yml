@@ -1,14 +1,20 @@
 version: '3.8'
 services:
   web:
-    build: .
+    build:
+      args:
+        user: root
+      dockerfile: Dockerfile
     container_name: "web"
     restart: unless-stopped
+    entrypoint: sh /bin/entrypoint.sh
     ports:
       - "8088:80"
       - "8089:8081"
     volumes:
       - ./src:/var/www/html
+      - ./entrypoint.sh:/bin/entrypoint.sh:ro
+      - ./supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
     depends_on:
       - redis-node1
       - redis-node2

@@ -33,4 +33,4 @@ if $all_clean; then
     --cluster-replicas 1
 else
   echo "Cluster already exists or nodes are not clean. Skipping cluster creation."
-fi 
+fi

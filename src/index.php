@@ -335,6 +335,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
                 } else if (e.key === 'Escape') {
                     hideSuggest();
                 }
+            } else {
+                // Process command history browsing when there is no suggestion
+                if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (history.length > 0 && historyIndex > 0) {
+                        historyIndex--;
+                        cliInput.value = history[historyIndex];
+                        setTimeout(() => cliInput.setSelectionRange(cliInput.value.length, cliInput.value.length), 0);
+                    }
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (history.length > 0 && historyIndex < history.length - 1) {
+                        historyIndex++;
+                        cliInput.value = history[historyIndex];
+                        setTimeout(() => cliInput.setSelectionRange(cliInput.value.length, cliInput.value.length), 0);
+                    } else if (historyIndex === history.length - 1) {
+                        historyIndex++;
+                        cliInput.value = '';
+                    }
+                }
             }
             setTimeout(() => showUsageGhost(cliInput.value), 0);
         });

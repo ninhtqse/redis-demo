@@ -329,6 +329,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
                     if (suggestIndex >= 0 && suggestFiltered[suggestIndex]) {
                         cliInput.value = suggestFiltered[suggestIndex] + ' ';
                         hideSuggest();
+                        setTimeout(() => {
+                            showSuggest(cliInput.value);
+                            showUsageGhost(cliInput.value);
+                        }, 0);
                         e.preventDefault();
                         return;
                     }
@@ -366,6 +370,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
                 cliInput.value = e.target.textContent + ' ';
                 hideSuggest();
                 cliInput.focus();
+                setTimeout(() => {
+                    showSuggest(cliInput.value);
+                    showUsageGhost(cliInput.value);
+                }, 0);
             }
         });
         function showSuggest(val) {

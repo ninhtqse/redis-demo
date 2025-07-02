@@ -6,6 +6,7 @@ services:
     restart: unless-stopped
     ports:
       - "8088:80"
+      - "8089:8081"
     volumes:
       - ./src:/var/www/html
     depends_on:

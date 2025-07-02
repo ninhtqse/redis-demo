@@ -172,6 +172,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
         const terminal = document.getElementById('terminal');
         const cliInput = document.getElementById('cli-input');
         const cliSuggest = document.getElementById('cli-suggest');
+        let ws;
         let history = [];
         let historyIndex = 0;
         let suggestList = [
@@ -391,6 +392,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
         function sendCmd() {
             const cmd = cliInput.value.trim();
             if (!cmd) return;
+            // Nếu là SUBSCRIBE thì dùng WebSocket
+            if (/^SUBSCRIBE\s+\S+/i.test(cmd)) {
+                const channel = cmd.split(/\s+/)[1];
+                appendLine('SUBSCRIBE ' + channel, 'Waiting for messages...');
+                startWebSocketSubscribe(channel);
+                history.push(cmd);
+                if (history.length > 50) history = history.slice(-50);
+                historyIndex = history.length;
+                cliInput.value = '';
+                return;
+            }
             fetch('', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -416,6 +428,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
             historyIndex = 0;
             cliInput.value = '';
             cliInput.focus();
+        }
+
+        function startWebSocketSubscribe(channel) {
+            if (!ws || ws.readyState === WebSocket.CLOSED) {
+                ws = new WebSocket('ws://localhost:8089');
+                ws.onopen = function() {
+                    ws.send(JSON.stringify({cmd: 'SUBSCRIBE', channel: channel}));
+                };
+                ws.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    if (data.channel && data.message) {
+                        appendLine('SUBSCRIBE ' + data.channel, data.message);
+                    } else if (data.info) {
+                        appendLine('INFO', data.info);
+                    }
+                };
+                ws.onclose = function() {
+                    appendLine('INFO', 'WebSocket closed');
+                };
+            } else if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({cmd: 'SUBSCRIBE', channel: channel}));
+            }
         }
     </script>
 </body>

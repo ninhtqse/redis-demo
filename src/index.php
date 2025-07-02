@@ -6,6 +6,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
         echo json_encode(['result' => '']);
         exit;
     }
+    if (preg_match('/^\s*(SUBSCRIBE|PSUBSCRIBE|SSUBSCRIBE)\b/i', $cmd)) {
+        echo json_encode(['result' => '', 'error' => 'SUBSCRIBE command is not supported on web CLI. Please use real redis-cli to receive realtime messages.']);
+        exit;
+    }
     // Pass command via stdin to keep JSON and special characters
     $fullCmd = 'redis-cli -c -h redis-node1 -p 7000 --raw 2>&1';
     $descriptorspec = [

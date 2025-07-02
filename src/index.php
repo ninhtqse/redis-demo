@@ -23,6 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cmd'])) {
         fclose($pipes[2]);
         proc_close($process);
         $result = trim($output . $error);
+        // Hide redirect line
+        $result = preg_replace('/^-> Redirected to slot.*\n?/m', '', $result);
         if ($result === '' || strtolower($result) === 'null') {
             $result = "(nil)";
         }
